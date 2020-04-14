@@ -1,0 +1,47 @@
+---
+title: "Lab 5"
+author: "John Chandara"
+date: "4/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+
+```{r}
+accident <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/accident.csv", stringsAsFactors = FALSE)
+
+person <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/person.csv", stringsAsFactors = FALSE)
+```
+
+
+1. Are there some days of the week where more accidents happen than on others (use variable `DAY_WEEK`)?
+```{r}
+  accident %>%
+    ggplot(aes(x=wday(DAY_WEEK, label=TRUE))) + geom_bar() + xlab('Day of the Week') + ylab('Accidents')
+```
+
+2. What time of the day do accidents happen (use variable `HOUR`)?
+```{r}
+  accident %>% filter(HOUR < 24) %>%
+    ggplot(aes(x=HOUR)) + geom_bar() +
+    scale_x_discrete(labels=c(
+      "0" = "12:00 AM",
+      "5" = "05:00 AM",
+      "10" = "10:00 AM",
+      "15" = "03:00 PM",
+      "20" = "08:00 PM"
+      )) +
+    xlab('Hour of the Day') + ylab('Accidents')
+```
+
+3. What is the number of accidents with at least one drunk driver (use variable `DRUNK_DR`)?
+
+8. Visualize the number of accidents in each county using a choropleth map. To do this, you need to join the accident data, GLCs, and appropriate map data.
