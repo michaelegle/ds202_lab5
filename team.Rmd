@@ -24,19 +24,62 @@ person <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/mas
 
 1. Are there some days of the week where more accidents happen than on others (use variable DAY_WEEK)?
 
+
+It appears that weekends (Friday, Saturday, and Sunday) tend to have the most accidents
+
 2. What time of the day do accidents happen (use variable HOUR)?
+
+
+There's a small spike at about 6am when people could be making their daily commute to work. Accidents also gradually increase to a peak at 6pm.
 
 3. What is the number of accidents with at least one drunk driver (use variable DRUNK_DR)?
 
-4. In the person table, dentify drivers (PER_TYP == 1, see FARS manual) and subset on them.
+
+8769 of the accidents had at least one drunk driver involved.
+
+4. In the person table, identify drivers (PER_TYP == 1, see FARS manual) and subset on them.
+
+```{r}
+drivers <- person %>%
+  filter(PER_TYP == 1)
+```
 
 5. Join accident and person table (work out which variable(s) to use)
 
+```{r}
+accident <- accident %>%
+  inner_join(person)
+```
+
 6. Tally the number of accidents by day of the week (DAY_WEEK), hour of the day (HOUR) and gender (SEX). Visualize the results.
+
+```{r}
+accident %>%
+  group_by(DAY_WEEK, HOUR, SEX) %>%
+  filter(HOUR != 99, SEX == 1 | SEX == 2) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(x = HOUR, y = count, fill = SEX)) +
+  facet_wrap(. ~ DAY_WEEK) +
+  geom_bar(stat = "identity")
+```
+
 
 7. Now plot a choropleth map of accidents on a county level
 
 Read the description for the STATE and COUNTY columns in the FARS manual. The state & county codes are Geographic Locator Codes (GLCs) from the General Services Administration’s (GSA) publication. Use readxl::read_xlsx to read in the GLCs
+
+```{r}
+fars <- readxl::read_xlsx('GLC.xlsx')
+```
+```{r}
+fars <- fars %>%
+  mutate_at(.vars = vars(`State Code`, `County Code`),
+            .funs = funs(as.integer))
+
+accident <- accident %>%
+  inner_join(fars, by = c('STATE' = 'State Code', 'COUNTY' = 'County Code'))
+```
+
 
 8. Visualize the number of accidents in each county using a choropleth map. To do this, you need to join the accident data, GLCs, and appropriate map data.
 
