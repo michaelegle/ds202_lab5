@@ -44,4 +44,13 @@ person <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/mas
 
 3. What is the number of accidents with at least one drunk driver (use variable `DRUNK_DR`)?
 
+```{r}
+  result <- accident %>% filter(DRUNK_DR >= 1) %>%
+    summarize(n = n())
+
+  result$n
+```
+
+There exist 8769 accidents in this data set with at least one drunk driver.
+
 8. Visualize the number of accidents in each county using a choropleth map. To do this, you need to join the accident data, GLCs, and appropriate map data.
