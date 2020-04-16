@@ -22,20 +22,29 @@ person <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/mas
 ```
 
 
-1. Are there some days of the week where more accidents happen than on others (use variable DAY_WEEK)?
+1. Are there some days of the week where more accidents happen than on others (use variable `DAY_WEEK`)?
+```{r}
+  accident %>%
+    ggplot(aes(x=wday(DAY_WEEK, label=TRUE))) + geom_bar() + xlab('Day of the Week') + ylab('Accidents')
+```
 
+2. What time of the day do accidents happen (use variable `HOUR`)?
+```{r}
+  accident %>% filter(HOUR < 24) %>%
+    ggplot(aes(x=HOUR)) + geom_bar() +
+    xlab('Hour of the Day') + ylab('Accidents')
+```
 
-It appears that weekends (Friday, Saturday, and Sunday) tend to have the most accidents
+3. What is the number of accidents with at least one drunk driver (use variable `DRUNK_DR`)?
 
-2. What time of the day do accidents happen (use variable HOUR)?
+```{r}
+  result <- accident %>% filter(DRUNK_DR >= 1) %>%
+    summarize(n = n())
 
+  result$n
+```
 
-There's a small spike at about 6am when people could be making their daily commute to work. Accidents also gradually increase to a peak at 6pm.
-
-3. What is the number of accidents with at least one drunk driver (use variable DRUNK_DR)?
-
-
-8769 of the accidents had at least one drunk driver involved.
+There exist 8769 accidents in this data set with at least one drunk driver.
 
 4. In the person table, identify drivers (PER_TYP == 1, see FARS manual) and subset on them.
 
@@ -82,5 +91,48 @@ accident <- accident %>%
 
 
 8. Visualize the number of accidents in each county using a choropleth map. To do this, you need to join the accident data, GLCs, and appropriate map data.
+```{r}
+fars_iowa <- fars %>% 
+  filter(`State Name` == 'IOWA') %>% 
+  distinct(`County Code`, `County Name`) 
+
+accident_iowa <- accident %>%
+  filter(STATE == 1)
+
+counties <- map_data('county') %>% filter(region == 'iowa')
+total_accidents <- accident_iowa %>% group_by(COUNTY) %>% summarize(n = n())
+counties$subregion <- str_to_upper(counties$subregion)
+
+full_join(
+  counties,
+  inner_join(total_accidents, fars_iowa, by = c('COUNTY' = 'County Code')),
+  by = c('subregion' = 'County Name')
+) %>%
+  ggplot(aes(x = long, y = lat)) + geom_polygon(aes(group = subregion, fill = n)) + labs(color = 'Accidents')
+```
 
 9. Can you find seasonal trends in accident occurrences in different states? Is summer or winter more dangerous? Why?
+```{r}
+states <- map_data('state')
+
+winter <- accident %>%
+  filter(MONTH == 12 | MONTH < 3) %>%
+  group_by(STATE) %>%
+  summarize(n = n())
+winter$winter = TRUE
+
+summer <- accident %>%
+  filter(MONTH > 6 & MONTH < 9) %>%
+  group_by(STATE) %>%
+  summarize(n = n())
+summer$winter = FALSE
+
+full_join(states, full_join(summer, winter), by = c('group' = 'STATE')) %>%
+  ggplot(aes(x = long, y = lat)) +
+  geom_polygon(aes(group = group, fill = n)) +
+  facet_grid(~ winter) +
+  ggtitle('Accidents in the United States (Summer and Winter)')
+
+```
+
+There appears to be a reporting of many more accidents in the midwest during the winter seasion. This is likely due to slick roads and less control of the vehicle in the moment.
